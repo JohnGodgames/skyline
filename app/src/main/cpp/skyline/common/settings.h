@@ -73,6 +73,9 @@ namespace skyline {
         Setting<std::string> gpuDriver; //!< The label of the GPU driver to use
         Setting<std::string> gpuDriverLibraryName; //!< The name of the GPU driver library to use
         Setting<u32> executorSlotCountScale; //!< Number of GPU executor slots that can be used concurrently
+        Setting<u32> executorFlushThreshold; //!< Number of commands that need to accumulate before they're flushed to the GPU
+        Setting<bool> useDirectMemoryImport; //!< If buffer emulation should be done by importing guest buffer mappings
+        Setting<bool> forceMaxGpuClocks; //!< If the GPU should be forced to run at maximum clocks
 
         // Hacks
         Setting<bool> enableFastGpuReadbackHack; //!< If the CPU texture readback skipping hack should be used

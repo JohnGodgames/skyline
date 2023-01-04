@@ -204,6 +204,15 @@ namespace skyline::gpu {
         bcnSupport[4] = isFormatSupported(vk::Format::eBc5UnormBlock) && isFormatSupported(vk::Format::eBc5SnormBlock);
         bcnSupport[5] = isFormatSupported(vk::Format::eBc6HSfloatBlock) && isFormatSupported(vk::Format::eBc6HUfloatBlock);
         bcnSupport[6] = isFormatSupported(vk::Format::eBc7UnormBlock) && isFormatSupported(vk::Format::eBc7SrgbBlock);
+
+        auto memoryProps{physicalDevice.getMemoryProperties2()};
+        constexpr auto ReqMemFlags{vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostCached};
+        for (u32 i{}; i < memoryProps.memoryProperties.memoryTypeCount; i++)
+            if ((memoryProps.memoryProperties.memoryTypes[i].propertyFlags & ReqMemFlags) == ReqMemFlags)
+                hostVisibleCoherentCachedMemoryType = i;
+
+
+        minimumStorageBufferAlignment = static_cast<u32>(deviceProperties2.get().properties.limits.minStorageBufferOffsetAlignment);
     }
 
     std::string TraitManager::Summary() {
@@ -231,6 +240,10 @@ namespace skyline::gpu {
                 if (deviceProperties.driverVersion >= VK_MAKE_VERSION(512, 615, 0) && deviceProperties.driverVersion <= VK_MAKE_VERSION(512, 615, 512))
                     brokenMultithreadedPipelineCompilation = true;
 
+                if (deviceProperties.driverVersion < VK_MAKE_VERSION(512, 672, 0))
+                    brokenSubgroupMaskExtractDynamic = true;
+
+                brokenSubgroupShuffle = true;
                 maxGlobalPriority = vk::QueueGlobalPriorityEXT::eHigh;
                 break;
             }
@@ -269,7 +282,7 @@ namespace skyline::gpu {
         );
     }
 
-    void TraitManager::ApplyDriverPatches(const vk::raii::Context &context) {
+    void TraitManager::ApplyDriverPatches(const vk::raii::Context &context, adrenotools_gpu_mapping *mapping) {
         // Create an instance without validation layers in order to get pointers to the functions we need to patch from the driver
         vk::ApplicationInfo applicationInfo{
             .apiVersion = VK_API_VERSION_1_0,
@@ -293,6 +306,11 @@ namespace skyline::gpu {
         } else if (type == ADRENOTOOLS_BCN_BLOB) {
             Logger::Info("BCeNabler skipped, blob BCN support is present");
             bcnSupport.set();
+        }
+
+        if (adrenotools_validate_gpu_mapping(mapping)) {
+            Logger::Info("Applied GPU memory import patch");
+            supportsAdrenoDirectMemoryImport = true;
         }
     }
 }

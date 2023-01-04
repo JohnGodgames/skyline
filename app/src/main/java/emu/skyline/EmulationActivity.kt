@@ -280,6 +280,9 @@ class EmulationActivity : AppCompatActivity(), SurfaceHolder.Callback, View.OnTo
     override fun onPause() {
         super.onPause()
 
+        if (preferenceSettings.forceMaxGpuClocks)
+            GpuDriverHelper.forceMaxGpuClocks(false)
+
         changeAudioStatus(false)
     }
 
@@ -314,13 +317,15 @@ class EmulationActivity : AppCompatActivity(), SurfaceHolder.Callback, View.OnTo
         super.onDestroy()
         shouldFinish = false
 
-        stopEmulation(false)
-        vibrators.forEach { (_, vibrator) -> vibrator.cancel() }
-        vibrators.clear()
-
         // Stop forcing 60Hz on exit to allow the skyline UI to run at high refresh rates
         getSystemService<DisplayManager>()?.unregisterDisplayListener(this)
         force60HzRefreshRate(false)
+        if (preferenceSettings.forceMaxGpuClocks)
+            GpuDriverHelper.forceMaxGpuClocks(false)
+
+        stopEmulation(false)
+        vibrators.forEach { (_, vibrator) -> vibrator.cancel() }
+        vibrators.clear()
     }
 
     override fun surfaceCreated(holder : SurfaceHolder) {

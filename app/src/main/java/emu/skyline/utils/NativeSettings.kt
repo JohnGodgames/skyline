@@ -27,6 +27,9 @@ class NativeSettings(context : Context, pref : PreferenceSettings) {
     var gpuDriver : String = if (pref.gpuDriver == PreferenceSettings.SYSTEM_GPU_DRIVER) "" else pref.gpuDriver
     var gpuDriverLibraryName : String = if (pref.gpuDriver == PreferenceSettings.SYSTEM_GPU_DRIVER) "" else GpuDriverHelper.getLibraryName(context, pref.gpuDriver)
     var executorSlotCountScale : Int = pref.executorSlotCountScale
+    var executorFlushThreshold : Int = pref.executorFlushThreshold
+    var useDirectMemoryImport : Boolean = pref.useDirectMemoryImport
+    var forceMaxGpuClocks : Boolean = pref.forceMaxGpuClocks
 
     // Hacks
     var enableFastGpuReadbackHack : Boolean = pref.enableFastGpuReadbackHack

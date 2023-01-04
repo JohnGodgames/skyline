@@ -4,6 +4,7 @@
 #pragma once
 
 #include <vulkan/vulkan_raii.hpp>
+#include <adrenotools/driver.h>
 #include <common.h>
 
 namespace skyline::gpu {
@@ -49,8 +50,11 @@ namespace skyline::gpu {
         bool supportsExtendedDynamicState{}; //!< If the device supports the 'VK_EXT_extended_dynamic_state' Vulkan extension
         bool supportsNullDescriptor{}; //!< If the device supports the null descriptor feature in the 'VK_EXT_robustness2' Vulkan extension
         u32 subgroupSize{}; //!< Size of a subgroup on the host GPU
+        u32 hostVisibleCoherentCachedMemoryType{std::numeric_limits<u32>::max()};
+        u32 minimumStorageBufferAlignment{}; //!< Minimum alignment for storage buffers passed to shaders
 
         std::bitset<7> bcnSupport{}; //!< Bitmask of BCn texture formats supported, it is ordered as BC1, BC2, BC3, BC4, BC5, BC6H and BC7
+        bool supportsAdrenoDirectMemoryImport{};
 
         /**
          * @brief Manages a list of any vendor/device-specific errata in the host GPU
@@ -66,6 +70,8 @@ namespace skyline::gpu {
             bool brokenSpirvPositionInput{}; //!< [Adreno Proprietary] A bug that causes the shader compiler to fail on shaders with vertex position inputs not contained within a struct
             bool brokenComputeShaders{}; //!< [ARM Proprietary] A bug that causes compute shaders in some games to crash the GPU
             bool brokenMultithreadedPipelineCompilation{}; //!< [Qualcomm Proprietary] A bug that causes the shader compiler to crash when compiling pipelines on multiple threads simultaneously
+            bool brokenSubgroupMaskExtractDynamic{};  //!< [Qualcomm Proprietary] A bug that causes shaders using OpVectorExtractDynamic on the subgroup mask builtins to fail to compile
+            bool brokenSubgroupShuffle{}; //!< [Qualcomm Proprietary] A bug that causes shaders using OpSubgroupShuffle to do all sorts of weird things
 
             u32 maxSubpassCount{std::numeric_limits<u32>::max()}; //!< The maximum amount of subpasses within a renderpass, this is limited to 64 on older Adreno proprietary drivers
             vk::QueueGlobalPriorityEXT maxGlobalPriority{vk::QueueGlobalPriorityEXT::eMedium}; //!< The highest allowed global priority of the queue, drivers will not allow higher priorities to be set on queues
@@ -111,7 +117,7 @@ namespace skyline::gpu {
         /**
          * @brief Applies driver specific binary patches to the driver (e.g. BCeNabler)
          */
-        void ApplyDriverPatches(const vk::raii::Context &context);
+        void ApplyDriverPatches(const vk::raii::Context &context, adrenotools_gpu_mapping *mapping);
 
         /**
          * @return A summary of all the GPU traits as a human-readable string
